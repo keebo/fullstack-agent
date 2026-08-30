@@ -19,7 +19,7 @@
 
 # Starts the agent's pieces, in the right order:
 #   ai-visualizer (the face, opens in your browser)
-#   barehands     (the hands, URL printed; open it when you want the board)
+#   barehands     (the hands, opens in your browser)
 #   backtalk      (the voice, runs in this terminal; Ctrl-C stops EVERYTHING)
 # Pieces you didn't install are skipped automatically.
 #
@@ -70,7 +70,7 @@ if [ -d "$HOME_DIR/barehands" ] && [ "$MODE" != "voice" ]; then
   free_port "$hands_port"
   (exec python3 "$HOME_DIR/barehands/server.py") &
   PIDS+=($!)
-  echo "  hands: starting (open the printed URL in Chrome when you want the board)"
+  echo "  hands: starting (your browser opens on the board)"
 fi
 
 if [ -d "$HOME_DIR/backtalk" ]; then
