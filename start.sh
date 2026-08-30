@@ -42,14 +42,33 @@ trap cleanup EXIT INT TERM
 
 echo "fullstack-agent: starting from $HOME_DIR"
 
+free_port() {
+  local pids
+  pids="$(lsof -ti ":$1" 2>/dev/null)"
+  if [ -n "$pids" ]; then
+    kill $pids 2>/dev/null
+    sleep 0.5
+  fi
+}
+
 if [ -d "$HOME_DIR/ai-visualizer" ] && [ "$MODE" != "hands" ]; then
-  (cd "$HOME_DIR/ai-visualizer" && exec python3 server.py) &
+  # Single-instance guard: an orphaned server.py from a prior session
+  # (however it was launched) squats on the port and wins the bind race,
+  # so the new launch fails silently and no browser tab opens. Freeing
+  # the configured port directly catches orphans regardless of how their
+  # command line looks, unlike matching on argv text.
+  vis_port="$(python3 -c "import json;print(json.load(open('$HOME_DIR/ai-visualizer/ai-visualizer.json')).get('port',8790))" 2>/dev/null || echo 8790)"
+  free_port "$vis_port"
+  (exec python3 "$HOME_DIR/ai-visualizer/server.py") &
   PIDS+=($!)
   echo "  face:  starting (your browser opens on the visualizer)"
 fi
 
 if [ -d "$HOME_DIR/barehands" ] && [ "$MODE" != "voice" ]; then
-  (cd "$HOME_DIR/barehands" && exec python3 server.py) &
+  # Same single-instance guard as the face, above.
+  hands_port="$(python3 -c "import json;print(json.load(open('$HOME_DIR/barehands/barehands.json')).get('port',8794))" 2>/dev/null || echo 8794)"
+  free_port "$hands_port"
+  (exec python3 "$HOME_DIR/barehands/server.py") &
   PIDS+=($!)
   echo "  hands: starting (open the printed URL in Chrome when you want the board)"
 fi
